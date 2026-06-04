@@ -5,14 +5,6 @@ spring:
   application:
     name: agent-link
 
-  # MCP Server 配置
-  ai:
-    mcp:
-      server:
-        name: AgentLink
-        version: 1.0.0
-        enabled: true
-
   # 数据源配置（数据库MCP使用）
   datasource:
     url: jdbc:mysql://localhost:3306/agentlink?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -32,19 +24,3 @@ deepseek:
     key: ${DEEPSEEK_API_KEY:}
     base-url: https://api.deepseek.com/v1
     model: deepseek-chat
-
-# Actuator 健康检查
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,mcp
-  endpoint:
-    health:
-      show-details: always
-
-# MCP 端点
-mcp:
-  endpoint:
-    path: /mcp
-    enabled: true

@@ -3,7 +3,6 @@ package com.agentlink.mcp;
 import com.agentlink.service.AiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +13,6 @@ import java.util.Map;
  * 数据库查询 MCP Server
  * <p>
  * 通过自然语言查询 MySQL 数据库
- * 暴露工具：
- * - listTables: 列出所有表
- * - getTableSchema: 获取表结构
- * - queryByNaturalLanguage: 自然语言转SQL并查询
  */
 @Service
 public class DatabaseMcpService {
@@ -32,8 +27,8 @@ public class DatabaseMcpService {
         this.aiService = aiService;
     }
 
-    @Tool(description = "列出数据库中所有表名")
-    public List<String> listTables() {
+    @SuppressWarnings("unused")
+    public Object listTables(Map<String, String> args) {
         List<String> tables = jdbcTemplate.queryForList(
                 "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()",
                 String.class);
@@ -41,8 +36,12 @@ public class DatabaseMcpService {
         return tables;
     }
 
-    @Tool(description = "获取指定表的字段结构（字段名、类型、是否主键、注释）")
-    public List<Map<String, Object>> getTableSchema(String tableName) {
+    @SuppressWarnings("unused")
+    public Object getTableSchema(Map<String, String> args) {
+        String tableName = args.getOrDefault("tableName", "");
+        if (tableName.isBlank()) {
+            return "请指定表名";
+        }
         String sql = """
                 SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_COMMENT
                 FROM information_schema.COLUMNS
@@ -52,15 +51,20 @@ public class DatabaseMcpService {
         return jdbcTemplate.queryForList(sql, tableName);
     }
 
-    @Tool(description = "通过自然语言查询数据库，自动将用户问题转为SQL并执行返回结果")
-    public String queryByNaturalLanguage(String question) {
+    @SuppressWarnings("unused")
+    public Object queryByNaturalLanguage(Map<String, String> args) {
+        String question = args.getOrDefault("question", "");
+        if (question.isBlank()) {
+            return "请输入你的问题";
+        }
+
         try {
             // 1. 获取所有表结构
             StringBuilder schemaBuilder = new StringBuilder();
-            List<String> tables = listTables();
+            List<String> tables = (List<String>) listTables(Map.of());
             for (String table : tables) {
                 schemaBuilder.append("表名: ").append(table).append("\n");
-                List<Map<String, Object>> columns = getTableSchema(table);
+                List<Map<String, Object>> columns = (List<Map<String, Object>>) getTableSchema(Map.of("tableName", table));
                 for (Map<String, Object> col : columns) {
                     schemaBuilder.append("  - ")
                             .append(col.get("COLUMN_NAME")).append(" ")
@@ -79,7 +83,7 @@ public class DatabaseMcpService {
                 return sql.trim().substring(2).trim();
             }
 
-            // 3. 安全检查：只允许 SELECT
+            // 3. 安全检查
             if (!sql.trim().toUpperCase().startsWith("SELECT")) {
                 return "只支持查询操作（SELECT），已拒绝不安全SQL";
             }

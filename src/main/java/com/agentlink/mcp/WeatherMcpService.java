@@ -2,23 +2,22 @@ package com.agentlink.mcp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * 天气 MCP Server
  * <p>
  * 使用 wttr.in 免费天气 API（无需 Key）
- * 暴露工具：
- * - getCurrentWeather: 获取城市实时天气
- * - getWeatherForecast: 获取城市天气预报
  */
 @Service
 public class WeatherMcpService {
@@ -35,17 +34,20 @@ public class WeatherMcpService {
                 .build();
     }
 
-    @Tool(description = "获取指定城市的实时天气情况，返回温度、天气状况等信息")
-    public String getCurrentWeather(String city) {
+    public String getCurrentWeather(Map<String, String> args) {
+        String city = args.getOrDefault("city", "北京");
         try {
-            String url = baseUrl + "/" + city + "?format=%C+%t+%h+%w";
+            String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
+            // 注意：wttr.in 的 format 参数包含 %，需要用 URI 构造避免转义问题
+            String urlStr = baseUrl + "/" + encodedCity + "?format=%25C+%25t+%25h+%25w";
+            var uri = new URI(urlStr);
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(uri)
                     .timeout(Duration.ofSeconds(10))
                     .GET()
                     .build();
             HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            log.info("Weather API response for {}: {}", city, resp.statusCode());
+            log.info("Weather for {}: {}", city, resp.statusCode());
             return city + " 当前天气: " + resp.body();
         } catch (Exception e) {
             log.error("Failed to get weather for {}", city, e);
@@ -53,17 +55,19 @@ public class WeatherMcpService {
         }
     }
 
-    @Tool(description = "获取指定城市未来3天的天气预报")
-    public String getWeatherForecast(String city) {
+    public String getWeatherForecast(Map<String, String> args) {
+        String city = args.getOrDefault("city", "北京");
         try {
-            String url = baseUrl + "/" + city + "?format=%C+%t&days=3";
+            String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
+            String urlStr = baseUrl + "/" + encodedCity + "?format=%25C+%25t&days=3";
+            var uri = new URI(urlStr);
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(uri)
                     .timeout(Duration.ofSeconds(10))
                     .GET()
                     .build();
             HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            log.info("Weather forecast response for {}: {}", city, resp.statusCode());
+            log.info("Forecast for {}: {}", city, resp.statusCode());
             return city + " 天气预报:\n" + resp.body();
         } catch (Exception e) {
             log.error("Failed to get forecast for {}", city, e);
