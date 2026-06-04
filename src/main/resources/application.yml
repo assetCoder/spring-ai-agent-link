@@ -1,0 +1,26 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: agent-link
+
+  # 数据源配置（数据库MCP使用）
+  datasource:
+    url: jdbc:mysql://localhost:3306/agentlink?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# 天气API配置
+weather:
+  api:
+    # wttr.in 免费天气API，无需Key
+    base-url: https://wttr.in
+
+# DeepSeek配置（自然语言转SQL）
+deepseek:
+  api:
+    key: ${DEEPSEEK_API_KEY:}
+    base-url: https://api.deepseek.com/v1
+    model: deepseek-chat
