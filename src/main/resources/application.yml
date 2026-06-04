@@ -6,21 +6,22 @@ spring:
     name: agent-link
 
   # 数据源配置（数据库MCP使用）
+  # 可通过环境变量覆盖：DB_URL, DB_USER, DB_PASS
   datasource:
-    url: jdbc:mysql://localhost:3306/agentlink?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+    url: ${DB_URL:jdbc:mysql://localhost:3306/agentlink?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USER:root}
+    password: ${DB_PASS:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # 天气API配置
 weather:
   api:
     # wttr.in 免费天气API，无需Key
-    base-url: https://wttr.in
+    base-url: ${WTTR_BASE_URL:https://wttr.in}
 
 # DeepSeek配置（自然语言转SQL）
 deepseek:
   api:
     key: ${DEEPSEEK_API_KEY:}
-    base-url: https://api.deepseek.com/v1
-    model: deepseek-chat
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com/v1}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
